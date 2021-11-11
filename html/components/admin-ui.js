@@ -17,12 +17,6 @@ export default {
         }
     },
 
-    data() {
-        return {
-          selected: undefined,
-        }
-    },
-
     template: `
         <div class="admin-column">
             <div class="admin-row">
@@ -30,15 +24,13 @@ export default {
                 <span v-if="!artists_count">Add artists to upload artworks</span>
                 <span v-else>
                     <span>Upload for artist:&nbsp;&nbsp;</span>
-                    <select name="upload_artist" v-model="selected">
-                        <option v-for="artist in artists" v-bind:value="artist">
-                            {{artist.label}} - {{artist.key.substring(0, 4)}}
-                        </option>
+                    <select name="upload_artist" v-model="$state.selected_artist">
+                        <option v-for="artist in artists" v-bind:value="{key: artist.key, label: artist.label}">{{artist.label}} - {{artist.key.substring(0, 4)}}</option>
                     </select>
                     &nbsp;&nbsp;
                     <input type="file" multiple accept="image/png, image/jpeg"   
                         v-on:change.native="onUploadArtwork"
-                        :disabled="!selected"
+                        :disabled="!$state.selected_artist"
                     />
                 </span>
             </div>
@@ -89,7 +81,7 @@ export default {
                 if (!file) { 
                     continue;
                 }
-                this.$store.uploadArtwork(file, this.selected.key, this.selected.label)
+                this.$store.uploadArtwork(file, this.$state.selected_artist.key, this.$state.selected_artist.label)
             }
         },
 

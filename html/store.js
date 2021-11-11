@@ -285,13 +285,13 @@ export const store = {
         //       }
         //
         if (this.state.artists_count != res.artists.length) {
-            // if (!this.state.selected_artist) {
-            //     // choose first artist for admin if nobody is selected
-            //     this.state.selected_artist = {
-            //         key: res.artists[0].key,
-            //         label: res.artists[0].label
-            //     }
-            // }
+            if (!this.state.selected_artist) {
+                // choose first artist for admin if nobody is selected
+                this.state.selected_artist = {
+                    key: res.artists[0].key,
+                    label: res.artists[0].label
+                }
+            }
 
             let mykeys = this.state.my_artist_keys
             for (let artist of res.artists) {
