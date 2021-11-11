@@ -1,6 +1,6 @@
 import {router} from './router.js';
 import utils from './utils/utils.js';
-import { tabs, sort, common } from './utils/consts.js';
+import { tabs, sort, common, contract } from './utils/consts.js';
 
 const reactive = Vue.reactive
 const computed = Vue.computed
@@ -10,7 +10,7 @@ const defaultState = () => {
         loading: true,
         error: undefined,
         shader: undefined,
-        cid: "b51efe78d3e7c83c8dbc3d59d5e06b2bd770139e645bc19e50652632cbdd47d1",
+        cid: contract.cid,
         my_artist_keys: [],
         is_artist: false,
         is_admin: false,
