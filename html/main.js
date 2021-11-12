@@ -45,7 +45,6 @@ utils.initialize(
             ].join(' ');
         }
         
-
         if (err) {
             return store.setError(err);
         }
