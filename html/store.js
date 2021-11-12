@@ -30,7 +30,7 @@ const defaultState = () => {
         sort_by: null,
         refresh_timer: undefined,
         pending_artworks: 0,
-        is_headless: true
+        is_headless: false
     }
 }
 
@@ -80,6 +80,7 @@ export const store = {
         }
 
         Object.assign(this.state, defaultState())
+        this.state.is_headless = utils.isHeadless()
         router.push({name: 'gallery'})
 
         Vue.nextTick(() => {
@@ -704,7 +705,12 @@ export const store = {
     },
 
     async switchToHeaded () {
-        await utils.switchToHeaded()
-        this.start()
+        try {
+            await utils.switchToHeaded()
+            this.start()
+        }
+        catch(err) {
+            this.setError(err)
+        }
     }
 }
