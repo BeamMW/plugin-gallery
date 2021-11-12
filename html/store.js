@@ -194,8 +194,8 @@ export const store = {
 
         utils.ensureField(res, "Admin", "number")
         utils.ensureField(res, "voteReward_balance", "number")
-        //this.state.is_admin = !!res.Admin
-        this.state.is_admin = true
+        this.state.is_admin = !!res.Admin
+        //this.state.is_admin = true
         this.state.balance_reward = res.voteReward_balance
         this.loadBalance()
     },
