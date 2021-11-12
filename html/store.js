@@ -332,7 +332,7 @@ export const store = {
         let all = [], sale = [], liked = [], mine = [], sold = []
 
         for (const artwork of res.items) {
-            if (!this.state.is_admin && artwork.id >= 226 && artwork.id <= 251) {
+            if (!this.state.is_admin && artwork.id >= 227 && artwork.id <= 252) {
                 continue
             }
             // TODO: remove if < 2, this is for test only
