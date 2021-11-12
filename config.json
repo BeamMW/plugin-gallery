@@ -1,0 +1,14 @@
+{
+  "StaticEndpoints": [
+    {
+      "Folder": "./html",
+      "Endpoint": "/app/",
+      "SameOrigin": false
+    },
+    {
+      "Folder": "./html",
+      "Endpoint": "/name/",
+      "SameOrigin": true
+    }
+  ]
+}
