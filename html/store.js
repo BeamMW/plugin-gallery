@@ -30,6 +30,7 @@ const defaultState = () => {
         sort_by: null,
         refresh_timer: undefined,
         pending_artworks: 0,
+        is_headless: true
     }
 }
 
