@@ -1,6 +1,6 @@
 import {router} from './router.js';
 import utils from './utils/utils.js';
-import { tabs, sort, common } from './utils/consts.js';
+import { tabs, sort, common, contract } from './utils/consts.js';
 
 const reactive = Vue.reactive
 const computed = Vue.computed
@@ -10,7 +10,7 @@ const defaultState = () => {
         loading: true,
         error: undefined,
         shader: undefined,
-        cid: "c02dbd603ec8925177cd3fd5e26848e3b82cd3691b69edd8add4ccfd4081ae9e",
+        cid: contract.cid,
         my_artist_keys: [],
         is_artist: false,
         is_admin: false,
@@ -519,6 +519,13 @@ export const store = {
     unlikeArtwork (id) {
         utils.invokeContract(
             `role=user,action=vote,id=${id},val=0,cid=${this.state.cid}`, 
+            (...args) => this.onMakeTx(...args)
+        )
+    },
+
+    deleteArtwork (id) {
+        utils.invokeContract(
+            `role=manager,action=admin_delete,id=${id},cid=${this.state.cid}`, 
             (...args) => this.onMakeTx(...args)
         )
     },
