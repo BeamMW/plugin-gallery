@@ -1,4 +1,3 @@
 
 .idea/
-plugin-red-envelope.exe
-config.json
+webpack.config.js
