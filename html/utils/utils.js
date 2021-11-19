@@ -106,7 +106,6 @@ export default class Utils {
         return new Promise((resolve, reject) => {
             window.addEventListener('message', async (ev) => {
                 if (ev.data === 'apiInjected') {
-                    alert('api injected')
                     await window.BeamApi.callWalletApiResult(apirescback);
                     resolve(window.BeamApi)
                 }
