@@ -1,8 +1,8 @@
-import html from '../utils/html.js';
-import adminui from './admin-ui.js';
-import artwork from './artwork.js';
-import balance from './balance.js';
-import warning from './tx-warning.js';
+import adminui from  './admin-ui.js';
+import artwork from  './artwork.js';
+import balance from  './balance.js';
+import headless from './headless.js';
+import warning from  './tx-warning.js';
 import artworksControls from './artworks-controls.js';
 import { popups } from '../utils/consts.js';
 import publicKeyPopup from './public-key-popup.js';
@@ -30,16 +30,20 @@ export default {
         },
         is_popup_visible() {
             return this.$state.is_popup_visible;
+        },
+        is_headless () {
+            return this.$state.is_headless
         }
     },
 
     components: {
-        artwork, adminui, balance, warning, artworksControls, publicKeyPopup
+        artwork, adminui, balance, warning, artworksControls, publicKeyPopup, headless
     },
 
     template: `
         <div class="vertical-container" id="container">
-            <balance></balance>
+            <headless v-if="is_headless"></headless>
+            <balance v-else></balance>
             <warning v-if="in_tx"></warning>
             <adminui v-if="!in_tx && is_admin"/>
             <artworksControls></artworksControls>
