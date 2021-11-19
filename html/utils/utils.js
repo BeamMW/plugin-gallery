@@ -644,9 +644,12 @@ export default class Utils {
     }
 
     static hideLoading() {
-        const elem = document.getElementById("dapp-loader");
-        elem.parentNode.removeChild(elem);
-        const container = document.getElementById('container');
+        const loader = document.getElementById("dapp-loader")
+        if (loader) {
+            loader.parentNode.removeChild(loader)
+        }
+
+        const container = document.getElementById('container')
         if (container) {
             container.style.filter = 'none'
         }
