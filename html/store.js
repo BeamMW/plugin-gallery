@@ -464,7 +464,7 @@ export const store = {
 
         // check version
         if (data[0] != 1) {
-            throw `Invalid format version: ${data[0]}`
+            return
         }
 
         // parse name
