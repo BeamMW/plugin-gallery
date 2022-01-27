@@ -6,6 +6,24 @@ export default {
     computed: {
         active_tab () {
             return this.$state.active_tab;
+        },
+        mine_tab_state () {
+            return this.$state.arts.find((art) => art.art_state.isMine);
+        },
+        liked_tab_state () {
+            return this.$state.arts.find((art) => art.art_state.isLiked);
+        },
+        sold_tab_state () {
+            return this.$state.arts.find((art) => art.art_state.isSold);
+        },
+        sale_tab_state () {
+            return this.$state.arts.find((art) => art.art_state.isSale);
+        },
+        get_pages_count() {
+            return Math.ceil(this.$state.arts.length / 2);
+        },
+        get_current_page() {
+            return this.$state.current_page;
         }
     },
 
@@ -29,10 +47,18 @@ export default {
                 <div class="artworks-controls">
                     <div class="artworks-controls__tabs">
                         ${this.renderTab(tabs.ALL, 'ALL')}
-                        ${this.renderTab(tabs.MINE, 'MINE')}
-                        ${this.renderTab(tabs.SALE, 'SALE')}
-                        ${this.renderTab(tabs.SOLD, 'SOLD')}
-                        ${this.renderTab(tabs.LIKED, 'LIKED')}
+                        ${this.mine_tab_state ? this.renderTab(tabs.MINE, 'MINE') : null}
+                        ${this.sale_tab_state ? this.renderTab(tabs.SALE, 'SALE') : null}
+                        ${this.sold_tab_state ? this.renderTab(tabs.SOLD, 'SOLD') : null}
+                        ${this.liked_tab_state ? this.renderTab(tabs.LIKED, 'LIKED') : null}
+                    </div>
+
+                    <div class="artworks-controls__pages">
+                        <button class="pages__control">Prev</button>
+                        <button class="pages__control">Next</button>
+                        <span class="pages__state">
+                            page: ${this.get_current_page + '/' + this.get_pages_count}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -62,16 +88,13 @@ export default {
         },
 
         renderTab(type, title) {
-            if (type === tabs.ALL || 
-            (this.$state.artworks[type] !== undefined && this.$state.artworks[type].length > 0)) {
-                return html`
-                    <span class="tab-item ${this.active_tab === type ? 'tab-active' : ''}" 
-                    onclick=${()=>{this.onTabClicked(type)}}>
-                        <div class="tab-item__title">${title}</div>
-                        ${this.renderActiveLine(type)}
-                    </span>
-                `;
-            }
+            return html`
+                <span class="tab-item ${this.active_tab === type ? 'tab-active' : ''}" 
+                onclick=${()=>{this.onTabClicked(type)}}>
+                    <div class="tab-item__title">${title}</div>
+                    ${this.renderActiveLine(type)}
+                </span>
+            `;
         }
     }
 }

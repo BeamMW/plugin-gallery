@@ -151,11 +151,32 @@ pre {
     display: flex;
     flex-direction: row;
     align-items: center;
+    width: 100%;
 }
 
 .artworks-controls__tabs {
     display: flex;
     flex-direction: row;
+}
+
+.artworks-controls__pages {
+    margin-left: auto;
+}
+
+.pages__control {
+    display: inline-block;
+    margin: 0 8px;
+    padding: 0;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.pages__state {
+    margin-left: 10px;
 }
 
 .tab-item {

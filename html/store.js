@@ -17,6 +17,8 @@ const defaultState = () => {
         artworks: {
             [tabs.ALL]: []
         },
+        current_page: 1,
+        arts: [],
         artists: {},
         artists_count: 0,
         balance_beam: 0,
@@ -89,8 +91,8 @@ export const store = {
                 this.state.shader = bytes
 
                 //utils.invokeContract("", (...args) => this.onShowMethods(...args), this.state.shader)
-                //utils.callApi("ev_subunsub", {ev_txs_changed: true, ev_system_state: true}, (err) => this.checkError(err))
-                this.state.refresh_timer = setInterval(() => this.refreshAllData(), 10000)
+                utils.callApi("ev_subunsub", {ev_txs_changed: true, ev_system_state: true}, (err) => this.checkError(err))
+                //this.state.refresh_timer = setInterval(() => this.refreshAllData(), 10000)
                 utils.invokeContract("role=manager,action=view", (...args) => this.onCheckCID(...args), this.state.shader)
             })
         })
@@ -197,7 +199,6 @@ export const store = {
         utils.ensureField(res, "Admin", "number")
         utils.ensureField(res, "voteReward_balance", "number")
         this.state.is_admin = !!res.Admin
-        //this.state.is_admin = true
         this.state.balance_reward = res.voteReward_balance
         this.loadBalance()
     },
@@ -322,34 +323,21 @@ export const store = {
     loadArtworks () {
         utils.invokeContract(
             `role=user,action=view_all,cid=${this.state.cid}`, 
-            (...args) => this.onLoadArtworks(...args)
+            (...args) => this.onLoadArts(...args)
         )    
     },
 
-    onLoadArtworks (err, res) {
+    onLoadArts (err, res) {
         if (err) {
             return this.setError(err, "Failed to load artwork list")
         }
     
-        utils.ensureField(res, "items", "array")
-        let all = [], sale = [], liked = [], mine = [], sold = []
+        utils.ensureField(res, "items", "array");
+        let arts = [];
 
-        for (const artwork of res.items) {
-            // TODO: remove if < 2, this is for test only
-            // if (artwork.id < 3) continue
-
-            // just for convenience, to make more clear what pk is
-            artwork.pk_owner = artwork.pk
-            delete artwork.pk
-        
-            if (artwork["price.aid"] != undefined) {
-                artwork.price = {
-                    aid: artwork["price.aid"],
-                    amount: artwork["price.amount"]
-                }
-            }
-
-            let oldArtwork = this.state.artworks[tabs.ALL].find((item) => {
+        for (let artwork of res.items) {
+            
+            let oldArtwork = this.state.arts.find((item) => {
                 return item.id == artwork.id;
             });
 
@@ -360,45 +348,108 @@ export const store = {
                 artwork.sales = oldArtwork.sales;
             }
 
-            artwork['author']=(this.state.artists[artwork.pk_author] || {}).label;
+            artwork.pk_owner = artwork.pk
+            delete artwork.pk
+        
+            if (artwork["price.aid"] != undefined) {
+                artwork.price = {
+                    aid: artwork["price.aid"],
+                    amount: artwork["price.amount"]
+                }
+            }
 
-            all.push(artwork)
+            artwork['author'] = (this.state.artists[artwork.pk_author] || {}).label;
+
             let mykeys = this.state.my_artist_keys
-
-            // MINE is what I own
-            if (artwork.owned) {
-                mine.push(artwork)
+            const artState = {
+                isAll: true,
+                isMine: artwork.owned,
+                isSale: artwork.owned && artwork.price,
+                isLiked: artwork.my_impression,
+                isSold: mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned
             }
 
-            // SALE is what OWN && what has price set
-            if (artwork.owned && artwork.price) {
-                sale.push(artwork)
-            }
-            
-            // LIKED is waht I've liked
-            if (artwork.my_impression) {
-                liked.push(artwork)
-            }
-            
-            // SOLD - I'm an author but I do not own
-            if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
-                sold.push(artwork)
-            }
+            artwork['art_state'] = artState;
+            arts.push(artwork);
 
             if (!oldArtwork) {
-                this.loadArtwork(all.length - 1, artwork.id);
+                this.loadArtwork(arts.length - 1, artwork.id);
             }
         }
-        
-        // TODO: need to find a way to optimize this
-        this.state.artworks[tabs.ALL]   = all
-        this.state.artworks[tabs.SALE]  = sale
-        this.state.artworks[tabs.LIKED] = liked
-        this.state.artworks[tabs.MINE]  = mine
-        this.state.artworks[tabs.SOLD]  = sold
         this.state.loading = false;
-        //this.sortArtWorks();
+        this.state.arts = arts;
     },
+
+    // onLoadArtworks (err, res) {
+    //     if (err) {
+    //         return this.setError(err, "Failed to load artwork list")
+    //     }
+    
+    //     utils.ensureField(res, "items", "array")
+    //     let all = [], sale = [], liked = [], mine = [], sold = []
+
+    //     for (const artwork of res.items) {
+    //         // just for convenience, to make more clear what pk is
+    //         artwork.pk_owner = artwork.pk
+    //         delete artwork.pk
+        
+    //         if (artwork["price.aid"] != undefined) {
+    //             artwork.price = {
+    //                 aid: artwork["price.aid"],
+    //                 amount: artwork["price.amount"]
+    //             }
+    //         }
+
+    //         let oldArtwork = this.state.artworks[tabs.ALL].find((item) => {
+    //             return item.id == artwork.id;
+    //         });
+
+    //         if (oldArtwork) {
+    //             artwork.title = oldArtwork.title;
+    //             artwork.bytes = oldArtwork.bytes;
+    //             artwork.pk_author = oldArtwork.pk_author;
+    //             artwork.sales = oldArtwork.sales;
+    //         }
+
+    //         artwork['author']=(this.state.artists[artwork.pk_author] || {}).label;
+
+    //         all.push(artwork)
+    //         let mykeys = this.state.my_artist_keys
+
+    //         // MINE is what I own
+    //         if (artwork.owned) {
+    //             mine.push(artwork)
+    //         }
+
+    //         // SALE is what OWN && what has price set
+    //         if (artwork.owned && artwork.price) {
+    //             sale.push(artwork)
+    //         }
+            
+    //         // LIKED is waht I've liked
+    //         if (artwork.my_impression) {
+    //             liked.push(artwork)
+    //         }
+            
+    //         // SOLD - I'm an author but I do not own
+    //         if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
+    //             sold.push(artwork)
+    //         }
+
+    //         if (!oldArtwork) {
+    //             this.loadArtwork(all.length - 1, artwork.id);
+    //         }
+    //     }
+        
+    //     // TODO: need to find a way to optimize this
+    //     this.state.artworks[tabs.ALL]   = all
+    //     this.state.artworks[tabs.SALE]  = sale
+    //     this.state.artworks[tabs.LIKED] = liked
+    //     this.state.artworks[tabs.MINE]  = mine
+    //     this.state.artworks[tabs.SOLD]  = sold
+    //     this.state.loading = false;
+    //     //this.sortArtWorks();
+    // },
 
     sortArtWorks() {
         let activeArts = this.state.artworks[this.state.active_tab];
@@ -441,6 +492,7 @@ export const store = {
     },
 
     loadArtwork(idx, id) {
+        console.log('artwork loaded')
         this.state.pending_artworks++
         utils.invokeContract(
             `role=user,action=download,cid=${this.state.cid},id=${id}`, 
@@ -481,17 +533,17 @@ export const store = {
 
         // save parsed data
         // list may have been changed, so we check if artwork with this id is still present
-        let artwork = this.state.artworks[tabs.ALL][idx]
+        let artwork = this.state.arts[idx]
         if (artwork && artwork.id) {
             artwork.title = name
             artwork.bytes = bytes
             artwork.pk_author = pk_author
 
             // We receive author only now, so add what's missing to SOLD
-            let mykeys = this.state.my_artist_keys
-            if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
-                this.state.artworks[tabs.SOLD].push(artwork)
-            }
+            // let mykeys = this.state.my_artist_keys
+            // if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
+            //     this.state.artworks[tabs.SOLD].push(artwork)
+            // }
         }
     },
 
@@ -601,12 +653,12 @@ export const store = {
 
     showStats() {
 
-        let total = this.state.artworks[tabs.ALL].length
+        let total = this.state.arts.length
         let left  = total
 
         for (let idx = 0; idx < total; ++idx) {
             let curridx = idx
-            let currid  = this.state.artworks[tabs.ALL][curridx].id
+            let currid  = this.state.arts[curridx].id
             utils.invokeContract(`role=user,action=view_item,cid=${this.state.cid},id=${currid}`, 
                 (err, res) => {
                     if (err) {
@@ -614,7 +666,7 @@ export const store = {
                     }
 
                     if (res.sales.length) {
-                        let artwork = this.state.artworks[tabs.ALL][curridx]
+                        let artwork = this.state.arts[curridx]
                         artwork.sales = res.sales
                     } 
                     
@@ -629,7 +681,7 @@ export const store = {
 
     __showStats() {
         const cnt_stats = 12
-        let artworks = this.state.artworks[tabs.ALL]
+        let artworks = this.state.arts
         let artists = this.state.artists
 
         let likes = [], likes_total = 0;

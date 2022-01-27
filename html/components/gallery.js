@@ -4,7 +4,7 @@ import balance from  './balance.js';
 import headless from './headless.js';
 import warning from  './tx-warning.js';
 import artworksControls from './artworks-controls.js';
-import { popups } from '../utils/consts.js';
+import { popups, tabs } from '../utils/consts.js';
 import publicKeyPopup from './public-key-popup.js';
 
 export default {
@@ -23,7 +23,19 @@ export default {
         },
         artworks () {
             let tab = this.$state.active_tab;
-            return this.$state.artworks[tab];
+            let arts = [];
+
+            for (let art of this.$state.arts) {
+                if ((art.art_state.isAll && tab === tabs.ALL) ||
+                (art.art_state.isMine && tab === tabs.MINE) ||
+                (art.art_state.isSale && tab === tabs.SALE) ||
+                (art.art_state.isSold && tab === tabs.SOLD) ||
+                art.art_state.isLiked && tab === tabs.LIKED) {
+                    arts.push(art);
+                }
+            }
+
+            return arts;
         },
         can_vote () {
             return this.$state.balance_reward > 0;
