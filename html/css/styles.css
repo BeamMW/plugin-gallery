@@ -14,8 +14,14 @@ html {
   width: 100%;
 }
 
-input,
-select,
+input {
+  font-size: 18px;
+}
+
+select {
+  font-size: 18px;
+}
+
 span {
   font-size: 18px;
 }
