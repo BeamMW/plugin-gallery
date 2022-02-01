@@ -24,6 +24,12 @@ html {
     color:           red;
 }
 
+input,
+select,
+span {
+  font-size: 18px;
+}
+
 .loading {
     display:         flex;
     align-items:     center;
