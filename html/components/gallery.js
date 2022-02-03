@@ -6,6 +6,7 @@ import warning from  './tx-warning.js';
 import artworksControls from './artworks-controls.js';
 import { popups, tabs } from '../utils/consts.js';
 import publicKeyPopup from './public-key-popup.js';
+import paginator from './paginator.js';
 
 export default {
     computed: {
@@ -49,7 +50,7 @@ export default {
     },
 
     components: {
-        artwork, adminui, balance, warning, artworksControls, publicKeyPopup, headless
+        artwork, adminui, balance, warning, artworksControls, publicKeyPopup, headless, paginator
     },
 
     template: `
@@ -81,6 +82,7 @@ export default {
                     v-on:change_price="onChangePrice"
                     v-on:delete="onDeleteArtwork"
                     />
+                    <paginator></paginator>
                 </div>
             </template>
             <template v-else>
