@@ -6,6 +6,7 @@ import warning from  './tx-warning.js';
 import artworksControls from './artworks-controls.js';
 import { popups, tabs } from '../utils/consts.js';
 import publicKeyPopup from './public-key-popup.js';
+import paginator from './paginator.js';
 
 export default {
     computed: {
@@ -22,8 +23,8 @@ export default {
             return this.$state.active_tab
         },
         artworks () {
-            let tab = this.$state.active_tab;
-            let arts = [];
+            let tab = this.$state.active_tab
+            let arts = []
 
             for (let art of this.$state.arts) {
                 if ((art.art_state.isAll && tab === tabs.ALL) ||
@@ -31,11 +32,11 @@ export default {
                 (art.art_state.isSale && tab === tabs.SALE) ||
                 (art.art_state.isSold && tab === tabs.SOLD) ||
                 art.art_state.isLiked && tab === tabs.LIKED) {
-                    arts.push(art);
+                    arts.push(art)
                 }
             }
 
-            return arts;
+            return arts
         },
         can_vote () {
             return this.$state.balance_reward > 0;
@@ -45,11 +46,17 @@ export default {
         },
         is_headless () {
             return this.$state.is_headless
+        },
+        current_page () {
+            return this.$state.current_page
+        },
+        total_pages () {
+            return this.$state.total_pages
         }
     },
 
     components: {
-        artwork, adminui, balance, warning, artworksControls, publicKeyPopup, headless
+        artwork, adminui, balance, warning, artworksControls, publicKeyPopup, headless, paginator
     },
 
     template: `
@@ -82,6 +89,11 @@ export default {
                     v-on:delete="onDeleteArtwork"
                     />
                 </div>
+                <paginator
+                    v-bind:current="current_page"
+                    v-bind:total="total_pages"
+                    v-on:page-changed="onPageChanged"
+                />
             </template>
             <template v-else>
                 <div class="empty-gallery">
@@ -129,6 +141,10 @@ export default {
 
         onDeleteArtwork(id) {
             this.$store.deleteArtwork(id)
+        },
+
+        onPageChanged(page) {
+            this.$state.current_page = page
         }
     }
 }

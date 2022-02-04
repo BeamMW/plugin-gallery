@@ -32,7 +32,9 @@ const defaultState = () => {
         sort_by: null,
         refresh_timer: undefined,
         pending_artworks: 0,
-        is_headless: false
+        is_headless: false,
+        current_page: 1,
+        total_pages: 0,
     }
 }
 
@@ -333,7 +335,8 @@ export const store = {
         }
     
         utils.ensureField(res, "items", "array");
-        let arts = [];
+        this.state.total_pages = Math.ceil(res.items.length / common.ITEMS_PER_PAGE)
+        if (this.state.current_page > this.state.total_pages) this.state.current_page = this.state.total_pages
 
         for (let artwork of res.items) {
             
