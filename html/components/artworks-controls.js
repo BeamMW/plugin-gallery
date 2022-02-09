@@ -5,26 +5,20 @@ import CustomSelect from './selector.js';
 export default {
     computed: {
         active_tab () {
-            return this.$state.active_tab;
+            return this.$state.active_tab
         },
         mine_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isMine);
+            return this.$state.artworks[tabs.MINE].length > 0
         },
         liked_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isLiked);
+            return this.$state.artworks[tabs.LIKED].length > 0
         },
         sold_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isSold);
+            return this.$state.artworks[tabs.SOLD].length > 0
         },
         sale_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isSale);
+            return this.$state.artworks[tabs.SALE].length > 0
         },
-        get_pages_count() {
-            return Math.ceil(this.$state.arts.length / 2);
-        },
-        get_current_page() {
-            return this.$state.current_page;
-        }
     },
 
     components: {
@@ -51,14 +45,6 @@ export default {
                         ${this.sale_tab_state ? this.renderTab(tabs.SALE, 'SALE') : null}
                         ${this.sold_tab_state ? this.renderTab(tabs.SOLD, 'SOLD') : null}
                         ${this.liked_tab_state ? this.renderTab(tabs.LIKED, 'LIKED') : null}
-                    </div>
-
-                    <div class="artworks-controls__pages">
-                        <button class="pages__control">Prev</button>
-                        <button class="pages__control">Next</button>
-                        <span class="pages__state">
-                            page: ${this.get_current_page + '/' + this.get_pages_count}
-                        </span>
                     </div>
                 </div>
             </div>

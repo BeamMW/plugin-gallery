@@ -1,6 +1,7 @@
-import {router} from './router.js';
-import utils from './utils/utils.js';
-import { tabs, sort, common, contract } from './utils/consts.js';
+import {router} from './router.js'
+import utils from './utils/utils.js'
+import { tabs, sort, common, contract } from './utils/consts.js'
+import { binary_search } from './utils/search.js'
 
 const reactive = Vue.reactive
 const computed = Vue.computed
@@ -15,10 +16,12 @@ const defaultState = () => {
         is_artist: false,
         is_admin: false,
         artworks: {
-            [tabs.ALL]: []
+            [tabs.ALL]: [],
+            [tabs.MINE]: [],
+            [tabs.SALE]: [],
+            [tabs.LIKED]: [],
+            [tabs.SOLD]: []
         },
-        current_page: 1,
-        arts: [],
         artists: {},
         artists_count: 0,
         balance_beam: 0,
@@ -34,12 +37,18 @@ const defaultState = () => {
         pending_artworks: 0,
         is_headless: false,
         current_page: 1,
-        total_pages: 0,
+        total_pages: 1
     }
 }
 
+let appstate = reactive(defaultState())
+Vue.watch([() => appstate.active_tab, () => appstate.artworks], ([tab, artworks]) => {
+    let total = artworks[tab].length
+    appstate.total_pages = total ? Math.ceil(total / common.ITEMS_PER_PAGE) : 1
+})
+
 export const store = {
-    state: reactive(defaultState()),
+    state: appstate,
 
     //
     // Errors
@@ -325,62 +334,69 @@ export const store = {
     loadArtworks () {
         utils.invokeContract(
             `role=user,action=view_all,cid=${this.state.cid}`, 
-            (...args) => this.onLoadArts(...args)
+            (...args) => this.onLoadArtworks(...args)
         )    
     },
 
-    onLoadArts (err, res) {
+    onLoadArtworks (err, res) {
         if (err) {
             return this.setError(err, "Failed to load artwork list")
         }
-    
-        utils.ensureField(res, "items", "array");
-        this.state.total_pages = Math.ceil(res.items.length / common.ITEMS_PER_PAGE)
-        if (this.state.current_page > this.state.total_pages) this.state.current_page = this.state.total_pages
 
-        for (let artwork of res.items) {
-            
-            let oldArtwork = this.state.arts.find((item) => {
-                return item.id == artwork.id;
-            });
+        utils.ensureField(res, "items", "array")
 
-            if (oldArtwork) {
-                artwork.title = oldArtwork.title;
-                artwork.bytes = oldArtwork.bytes;
-                artwork.pk_author = oldArtwork.pk_author;
-                artwork.sales = oldArtwork.sales;
+        let oldstart = 0
+        let all = [], sale = [], liked = [], mine = [], sold = []
+
+        for (let awork of res.items) {
+            let oawork = null
+            for (let idx = oldstart; idx < this.state.artworks[tabs.ALL].length; ++idx) {
+                if (this.state.artworks[tabs.ALL][idx].id == awork.id) {
+                    oldstart = idx + 1
+                    oawork = this.state.artworks[tabs.ALL][idx]
+                    break
+                }
+            }
+        
+            if (oawork) {
+                awork.title     = oawork.title
+                awork.bytes     = oawork.bytes
+                awork.sales     = oawork.sales
+                awork.author    = oawork.author
+                awork.pk_author = oawork.pk_author
+            } 
+            else {
+                awork.author = (this.state.artists[awork.pk_author] || {}).label
             }
 
-            artwork.pk_owner = artwork.pk
-            delete artwork.pk
-        
-            if (artwork["price.aid"] != undefined) {
-                artwork.price = {
-                    aid: artwork["price.aid"],
-                    amount: artwork["price.amount"]
+            awork.pk_owner = awork.pk
+            delete awork.pk
+
+            if (awork["price.aid"] != undefined) {
+                awork.price = {
+                    aid: awork["price.aid"],
+                    amount: awork["price.amount"]
                 }
             }
 
-            artwork['author'] = (this.state.artists[artwork.pk_author] || {}).label;
+            all.push(awork)
+            if (awork.id % 3  == 0)  mine.push(awork)  // awork.owned
+            if (awork.id % 5  == 0)  sale.push(awork)  // awork.owned && awork.price
+            if (awork.id % 10 == 0) liked.push(awork) // awork.my_impression
+            if (awork.id % 20 == 0)  sold.push(awork) // mykeys.indexOf(awork.pk_author) != -1 && !awork.owned
+        }    
 
-            let mykeys = this.state.my_artist_keys
-            const artState = {
-                isAll: true,
-                isMine: artwork.owned,
-                isSale: artwork.owned && artwork.price,
-                isLiked: artwork.my_impression,
-                isSold: mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned
-            }
-
-            artwork['art_state'] = artState;
-            arts.push(artwork);
-
-            if (!oldArtwork) {
-                this.loadArtwork(arts.length - 1, artwork.id);
-            }
+        this.state.artworks = {
+            [tabs.ALL]:   all,
+            [tabs.SALE]:  sale,
+            [tabs.LIKED]: liked,
+            [tabs.MINE]:  mine,
+            [tabs.SOLD]:  sold
         }
-        this.state.loading = false;
-        this.state.arts = arts;
+
+        this.state.loading = false
+        let currPage = this.state.current_page > this.state.total_pages ? this.state.total_pages : this.state.current_page
+        this.setCurrentPage(currPage)
     },
 
     // onLoadArtworks (err, res) {
@@ -454,12 +470,12 @@ export const store = {
     //     //this.sortArtWorks();
     // },
 
-    sortArtWorks() {
+    /*sortArtWorks() {
         let activeArts = this.state.artworks[this.state.active_tab];
 
         switch(this.state.sort_by) {
             case sort.CREATOR_ASC:
-                this.state.artworks[this.state.active_tab] = activeArts.sort((a,b) => a.author > b.author? 1 : -1);
+                this.state.artworks[this.state.active_tab] = active.sort((a,b) => a.author > b.author? 1 : -1);
                 break;
             case sort.CREATOR_DESC:
                 this.state.artworks[this.state.active_tab] = activeArts.sort((a,b) => a.author < b.author? 1 : -1);
@@ -487,15 +503,10 @@ export const store = {
             default:
               break;
         }
-    },
-
-    setActiveTab(id) {
-        this.state.active_tab = id;
-        //this.sortArtWorks();
-    },
+    },*/
 
     loadArtwork(idx, id) {
-        console.log('artwork loaded')
+        console.log('Load Artwork: ', id)
         this.state.pending_artworks++
         utils.invokeContract(
             `role=user,action=download,cid=${this.state.cid},id=${id}`, 
@@ -536,17 +547,17 @@ export const store = {
 
         // save parsed data
         // list may have been changed, so we check if artwork with this id is still present
-        let artwork = this.state.arts[idx]
+        let artwork = this.state.artworks[tabs.ALL][idx]
         if (artwork && artwork.id) {
             artwork.title = name
             artwork.bytes = bytes
             artwork.pk_author = pk_author
 
             // We receive author only now, so add what's missing to SOLD
-            // let mykeys = this.state.my_artist_keys
-            // if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
-            //     this.state.artworks[tabs.SOLD].push(artwork)
-            // }
+            let mykeys = this.state.my_artist_keys
+            if (mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
+                this.state.artworks[tabs.SOLD].push(artwork)
+            }
         }
     },
 
@@ -655,13 +666,12 @@ export const store = {
     },
 
     showStats() {
-
-        let total = this.state.arts.length
+        let total = this.state.artworks[tabs.ALL].length
         let left  = total
 
         for (let idx = 0; idx < total; ++idx) {
             let curridx = idx
-            let currid  = this.state.arts[curridx].id
+            let currid  = this.state.artworks[tabs.ALL][curridx].id
             utils.invokeContract(`role=user,action=view_item,cid=${this.state.cid},id=${currid}`, 
                 (err, res) => {
                     if (err) {
@@ -669,7 +679,7 @@ export const store = {
                     }
 
                     if (res.sales.length) {
-                        let artwork = this.state.arts[curridx]
+                        let artwork = this.state.artworks[tabs.ALL][curridx]
                         artwork.sales = res.sales
                     } 
                     
@@ -684,7 +694,7 @@ export const store = {
 
     __showStats() {
         const cnt_stats = 12
-        let artworks = this.state.arts
+        let artworks = this.state.artworks[tabs.ALL]
         let artists = this.state.artists
 
         let likes = [], likes_total = 0;
@@ -768,5 +778,23 @@ export const store = {
         catch(err) {
             this.setError(err)
         }
+    },
+
+    setCurrentPage(page) {
+        let artworks = this.state.artworks[this.state.active_tab]
+        let start = (page - 1) * common.ITEMS_PER_PAGE
+        let end   = Math.min(start + common.ITEMS_PER_PAGE, artworks.length)
+        for (let idx = start; idx < end; ++idx) {
+            let art = artworks[idx]
+            if (!art.bytes) {
+                this.loadArtwork(idx, art.id)
+            }
+        }
+        this.state.current_page = page
+    },
+
+    setActiveTab(id) {
+        this.state.active_tab = id
+        this.setCurrentPage(1)
     }
 }

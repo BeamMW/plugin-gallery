@@ -159,26 +159,6 @@ pre {
     flex-direction: row;
 }
 
-.artworks-controls__pages {
-    margin-left: auto;
-}
-
-.pages__control {
-    display: inline-block;
-    margin: 0 8px;
-    padding: 0;
-    background-color: transparent;
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 700;
-    color: #fff;
-}
-
-.pages__state {
-    margin-left: 10px;
-}
-
 .tab-item {
     color: rgba(255, 255, 255, .3);
     font-size: 12px;

@@ -7,6 +7,7 @@ import artworksControls from './artworks-controls.js';
 import { popups, tabs } from '../utils/consts.js';
 import publicKeyPopup from './public-key-popup.js';
 import paginator from './paginator.js';
+import { common } from '../utils/consts.js';
 
 export default {
     computed: {
@@ -23,20 +24,15 @@ export default {
             return this.$state.active_tab
         },
         artworks () {
-            let tab = this.$state.active_tab
-            let arts = []
-
-            for (let art of this.$state.arts) {
-                if ((art.art_state.isAll && tab === tabs.ALL) ||
-                (art.art_state.isMine && tab === tabs.MINE) ||
-                (art.art_state.isSale && tab === tabs.SALE) ||
-                (art.art_state.isSold && tab === tabs.SOLD) ||
-                art.art_state.isLiked && tab === tabs.LIKED) {
-                    arts.push(art)
-                }
+            let all = this.$state.artworks[this.$state.active_tab]
+            let artworks  = []
+            let start = (this.current_page - 1) * common.ITEMS_PER_PAGE
+            let end   = Math.min(start + common.ITEMS_PER_PAGE, all.length)
+            for (let idx = start; idx < end; ++idx) {
+                let art = all[idx]
+                artworks.push(art)
             }
-
-            return arts
+            return artworks
         },
         can_vote () {
             return this.$state.balance_reward > 0;
@@ -144,7 +140,7 @@ export default {
         },
 
         onPageChanged(page) {
-            this.$state.current_page = page
+            this.$store.setCurrentPage(page)
         }
     }
 }
