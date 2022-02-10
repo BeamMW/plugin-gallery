@@ -1,19 +1,12 @@
 /* reset */
 button {
   border: none;
-}
-
-button * {
-  pointer-events: none;
+  cursor: pointer;
 }
 
 button, input:focus,
 button, input:active {
   outline: none;
-}
-
-a {
-  text-decoration: none;
 }
 
 /* paginator */
@@ -27,6 +20,11 @@ a {
   flex-direction: row;
   justify-content: center;
   align-items: center;
+}
+
+.paginator-pages {
+  margin: 0 20px;
+  display: flex;
 }
 
 .button-prev {
@@ -61,14 +59,10 @@ a {
   letter-spacing: normal;
 }
 
-.pages {
-  margin: 0 20px;
-  display: flex;
-}
-
-.pages-number {
+.button-page {
   margin: 0px 3.5px;
   padding: 0px;
+  background-color: inherit;
   color: rgb(255, 255, 255, 0.5);
   font-family: SFProDisplay;
   font-size: 14px;
@@ -79,6 +73,11 @@ a {
   letter-spacing: normal;
 }
 
-.pages-number--active {
+.buttonPageActive {
   color: #00f6d2;
+}
+
+.is-hidden {
+  display: none;
+  /* background-color: red; */
 }
