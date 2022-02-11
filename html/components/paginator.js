@@ -15,14 +15,16 @@ export default {
 
   methods: {
     goToNextPage() {
-      this.$emit('goToNextPage')
+      this.currentPage < this.totalPages ? (this.currentPage += 1) : this.currentPage
+      this.$emit('onChangePage', this.currentPage)
     },
     goToPreviousPage() {
-      this.$emit('goToPreviousPage')
+      this.currentPage > 1 ? (this.currentPage -= 1) : this.currentPage
+      this.$emit('onChangePage', this.currentPage)
     },
-    changePage(page) {
+    onChangePage(page) {
       this.currentPage = page
-      this.$emit('changePage', this.currentPage)
+      this.$emit('onChangePage', this.currentPage)
     },
     defineAllPages(num) {
       return Array.from({ length: num }, (_, idx) => idx + 1)
@@ -41,7 +43,7 @@ export default {
         class="button-page"
         :class="{ buttonPageActive: p === currentPage }"
         v-for="p in pages"
-        @click="changePage(p)"
+        @click="onChangePage(p)"
         >{{ p }}</button>
       </div>
       

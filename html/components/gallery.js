@@ -88,31 +88,31 @@ export default {
             <publicKeyPopup v-if="is_popup_visible"></publicKeyPopup>
             <template v-if="artworks.length > 0">
                 <div class="artworks">
-                    <artwork v-for="artwork in current_artworks"
-                    v-bind:id="artwork.id"
-                    v-bind:title="artwork.title"
-                    v-bind:author="(artists[artwork.pk_author] || {}).label"
-                    v-bind:bytes="artwork.bytes"
-                    v-bind:owned="artwork.owned"
-                    v-bind:price="artwork.price"
-                    v-bind:likes_cnt="artwork.impressions"
-                    v-bind:liked="artwork.my_impression == 1"
-                    v-bind:in_tx="in_tx"
-                    v-bind:can_vote="can_vote"
-                    v-bind:is_admin="is_admin"
-                    v-on:sell="onSellArtwork"
-                    v-on:buy="onBuyArtwork"
-                    v-on:like="onLikeArtwork"
-                    v-on:unlike="onUnlikeArtwork"
-                    v-on:change_price="onChangePrice"
-                    v-on:delete="onDeleteArtwork"
-                    />
-                    <paginator
-                      :totalPages="total_pages"
-                      @changePage="pageChange($event)"
-                      @goToPreviousPage="pageChange('prev')"
-                      @goToNextPage="pageChange('next')">
-                    </paginator>
+                  <paginator
+                    :totalPages="total_pages"
+                    @onChangePage="onChangePage($event)"
+                  />
+                
+                  <artwork v-for="artwork in current_artworks"
+                  v-bind:id="artwork.id"
+                  v-bind:title="artwork.title"
+                  v-bind:author="(artists[artwork.pk_author] || {}).label"
+                  v-bind:bytes="artwork.bytes"
+                  v-bind:owned="artwork.owned"
+                  v-bind:price="artwork.price"
+                  v-bind:likes_cnt="artwork.impressions"
+                  v-bind:liked="artwork.my_impression == 1"
+                  v-bind:in_tx="in_tx"
+                  v-bind:can_vote="can_vote"
+                  v-bind:is_admin="is_admin"
+                  v-on:sell="onSellArtwork"
+                  v-on:buy="onBuyArtwork"
+                  v-on:like="onLikeArtwork"
+                  v-on:unlike="onUnlikeArtwork"
+                  v-on:change_price="onChangePrice"
+                  v-on:delete="onDeleteArtwork"
+                  />
+
                 </div>
             </template>
             <template v-else>
@@ -161,19 +161,8 @@ export default {
       this.$store.deleteArtwork(id)
     },
 
-    pageChange(value) {
-      switch (value) {
-        case 'prev': {
-          this.currentPage > 1 ? (this.currentPage -= 1) : this.currentPage
-          break
-        }
-        case 'next':
-          this.currentPage < this.total_pages ? (this.currentPage += 1) : this.currentPage
-          break
-        default:
-          this.currentPage = value
-      }
+    onChangePage(value) {
+      this.currentPage = value
     },
   },
 }
-

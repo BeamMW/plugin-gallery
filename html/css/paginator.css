@@ -76,8 +76,3 @@ button, input:active {
 .buttonPageActive {
   color: #00f6d2;
 }
-
-.is-hidden {
-  display: none;
-  /* background-color: red; */
-}
