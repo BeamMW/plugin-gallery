@@ -24,10 +24,8 @@ html {
     color:           red;
 }
 
-input,
-select,
-span {
-  font-size: 18px;
+select.upload_artist {
+    font-size: 0.9em;
 }
 
 .loading {
