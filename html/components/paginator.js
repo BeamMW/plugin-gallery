@@ -1,34 +1,35 @@
 export default {
   props: {
-    totalPages: {
+    total_pages: {
       type: Number,
       required: true,
+      default: 1,
     },
+    current_page: {
+      type: Number,
+      required: true,
+      default: 1,
+    }
   },
 
-  data() {
-    return {
-      currentPage: 1,
-      pages: this.defineAllPages(this.totalPages),
+  computed: {
+    pages () {
+      return Array.from({ length: this.total_pages }, (_, idx) => idx + 1)
     }
   },
 
   methods: {
     goToNextPage() {
-      this.currentPage < this.totalPages ? (this.currentPage += 1) : this.currentPage
-      this.$emit('onChangePage', this.currentPage)
+      let page = this.current_page < this.total_pages ? (this.current_page + 1) : this.current_page
+      this.onChangePage(page)
     },
     goToPreviousPage() {
-      this.currentPage > 1 ? (this.currentPage -= 1) : this.currentPage
-      this.$emit('onChangePage', this.currentPage)
+      let page = this.current_page > 1 ? (this.current_page - 1) : this.current_page
+      this.onChangePage(page)
     },
     onChangePage(page) {
-      this.currentPage = page
-      this.$emit('onChangePage', this.currentPage)
-    },
-    defineAllPages(num) {
-      return Array.from({ length: num }, (_, idx) => idx + 1)
-    },
+      this.$emit('onChangePage', page)
+    }
   },
 
   template: `
@@ -41,7 +42,7 @@ export default {
       <div class="paginator-pages">
         <button
         class="button-page"
-        :class="{ buttonPageActive: p === currentPage }"
+        :class="{ buttonPageActive: p === current_page }"
         v-for="p in pages"
         @click="onChangePage(p)"
         >{{ p }}</button>

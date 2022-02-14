@@ -13,7 +13,7 @@ export default {
   data() {
     return {
       artworksPerPage: common.ARTWORKS_PER_PAGE,
-      currentPage: 1,
+      current_page: 1,
     }
   },
 
@@ -61,8 +61,7 @@ export default {
       return Math.ceil(this.artworks.length / this.artworksPerPage) || 1
     },
     current_artworks() {
-      let tailCurrentArtworks = this.currentPage * this.artworksPerPage
-
+      let tailCurrentArtworks = this.current_page * this.artworksPerPage
       return [...this.artworks].slice(tailCurrentArtworks - this.artworksPerPage, tailCurrentArtworks)
     },
   },
@@ -89,7 +88,8 @@ export default {
             <template v-if="artworks.length > 0">
                 <div class="artworks">
                   <paginator
-                    :totalPages="total_pages"
+                    :total_pages="total_pages"
+                    :current_page="current_page"
                     @onChangePage="onChangePage($event)"
                   />
                 
@@ -162,7 +162,7 @@ export default {
     },
 
     onChangePage(value) {
-      this.currentPage = value
+      this.current_page = value
     },
   },
 }
