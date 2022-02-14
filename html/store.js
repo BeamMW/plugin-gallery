@@ -266,51 +266,7 @@ export const store = {
             (...args) => this.onLoadArtists(...args)
         )
     },
- onLoadArtists(err, res) {
-    if (err) {
-      return this.setError(err, "Failed to load artists list");
-    }
-    function compare(a, b) {
-      return a.label > b.label ? 1 : -1;
-    }
-    utils.ensureField(res, "artists", "array");
-    //
-    // OPTIMIZE:
-    //       code below is not optimized, need to ask Vlad  if it is possible for contract/app to
-    //       return artists old artists before new. In this case we can skip artists_count in res.artists
-    //
-    //       for (let idx = this.state.artists_count; idx < res.artists.length; ++idx) {
-    //          let artist = res.artists[idx]
-    //          if (artist.key == ... use indexOf this.state.my_artist_keys) {
-    //            this.state.is_artist = true
-    //          }
-    //          this.state.artists[artist.key] = artist
-    //       }
-    //
-    if (this.state.artists_count != res.artists.length) {
-      if (!this.state.selected_artist) {
-        // choose first artist for admin if nobody is selected
-        const sortedArtists = res.artists.sort(compare);
-        this.state.selected_artist = {
-          key: sortedArtists[0].key,
-          label: sortedArtists[0].label,
-        };
-      }
 
-      let mykeys = this.state.my_artist_keys;
-      alert(JSON.stringify(res.artists));
-
-      for (let artist of res.artists) {
-        if (mykeys.indexOf(artist.key) != -1) {
-          this.state.is_artist = true;
-        }
-        this.state.artists[artist.key] = artist;
-      }
-    }
-    // END OF NOT OPTIMIZED
-    this.state.artists_count = res.artists.length;
-    this.loadArtworks();
-  },
   onLoadArtists(err, res) {
     if (err) {
       return this.setError(err, "Failed to load artists list");
