@@ -1,12 +1,16 @@
 /* reset */
-button {
+.paginator button {
   border: none;
   cursor: pointer;
 }
 
-button, input:focus,
-button, input:active {
+.paginator button, .paginator input:focus,
+.paginator button, .paginator input:active {
   outline: none;
+}
+
+.paginator button:disabled {
+  cursor: auto;
 }
 
 /* paginator */
@@ -27,7 +31,7 @@ button, input:active {
   display: flex;
 }
 
-.button-prev {
+.paginator .button-prev {
   background-color: rgb(255, 255, 255, 0.1);
   color: rgb(255, 255, 255, 0.5);
   width: 68px;
@@ -43,7 +47,7 @@ button, input:active {
   letter-spacing: normal;
 }
 
-.button-next {
+.paginator .button-next {
   background-color: rgb(255, 255, 255, 0.1);
   color: rgb(255, 255, 255, 0.5);
   width: 68px;
@@ -59,7 +63,7 @@ button, input:active {
   letter-spacing: normal;
 }
 
-.button-page {
+.paginator .button-page {
   margin: 0px 3.5px;
   padding: 0px;
   background-color: inherit;
@@ -73,6 +77,6 @@ button, input:active {
   letter-spacing: normal;
 }
 
-.buttonPageActive {
+.paginator .page-active {
   color: #00f6d2;
 }

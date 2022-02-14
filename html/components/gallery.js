@@ -112,7 +112,6 @@ export default {
                   v-on:change_price="onChangePrice"
                   v-on:delete="onDeleteArtwork"
                   />
-
                 </div>
             </template>
             <template v-else>
