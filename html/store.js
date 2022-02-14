@@ -210,7 +210,7 @@ export const store = {
 
         utils.ensureField(res, "Admin", "number")
         utils.ensureField(res, "voteReward_balance", "number")
-        this.state.is_admin = true //!!res.Admin
+        this.state.is_admin = !!res.Admin
         this.state.balance_reward = res.voteReward_balance
         this.loadBalance()
     },
@@ -336,6 +336,7 @@ export const store = {
 
         let oldstart = 0
         let all = [], sale = [], liked = [], mine = [], sold = []
+        let mykeys = this.state.my_artist_keys
 
         for (let awork of res.items) {
             let oawork = null
@@ -369,10 +370,10 @@ export const store = {
             }
 
             all.push(awork)
-            if (awork.id % 3  == 0)  mine.push(awork)  // awork.owned // MINE is what I own
-            if (awork.id % 5  == 0)  sale.push(awork)  // awork.owned && awork.price // SALE is what OWN && what has price set
-            if (awork.id % 10 == 0) liked.push(awork) // awork.my_impression
-            if (awork.id % 20 == 0)  sold.push(awork) // mykeys.indexOf(awork.pk_author) != -1 && !awork.owned // SOLD - I'm an author but I do not own
+            if (awork.owned) mine.push(awork) // MINE is what I own
+            if (awork.owned && awork.price) sale.push(awork) // SALE is what OWN && what has price set
+            if (awork.my_impression) liked.push(awork) // awork.my_impression
+            if (mykeys.indexOf(awork.pk_author) != -1 && !awork.owned) sold.push(awork) // SOLD - I'm an author but I do not own
         }    
 
         this.state.artworks = {
