@@ -83,7 +83,6 @@ export default {
             <div class="artwork">
                 ${this.renderPreview()}
                 ${this.renderDelete()}
-                ${this.id}, ${this.bytes.length}
                 <div class="info-row">
                     <span class="artwork-title">
                         <span>
@@ -128,9 +127,6 @@ export default {
                 return html`
                     <div class="preview-container">
                         <img src=${image}/>
-                    </div>
-                    <div>
-                        Preview bytes: ${this.bytes.length}
                     </div>
                 `
             } else {
