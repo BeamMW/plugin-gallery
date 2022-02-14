@@ -29,8 +29,7 @@ export default {
             let start = (this.current_page - 1) * common.ITEMS_PER_PAGE
             let end   = Math.min(start + common.ITEMS_PER_PAGE, all.length)
             for (let idx = start; idx < end; ++idx) {
-                let art = all[idx]
-                artworks.push(art)
+                artworks.push(all[idx])
             }
             return artworks
         },
@@ -64,7 +63,7 @@ export default {
             <artworksControls></artworksControls>
             <publicKeyPopup v-if="is_popup_visible"></publicKeyPopup>
             <template v-if="artworks.length > 0">
-                <div class="artworks">
+                <div class="artworks" ref="artslist">
                     <artwork v-for="artwork in artworks"
                     v-bind:id="artwork.id"
                     v-bind:title="artwork.title"
@@ -91,12 +90,10 @@ export default {
                     v-on:page-changed="onPageChanged"
                 />
             </template>
-            <template v-else>
-                <div class="empty-gallery">
-                    <img class="empty-gallery__icon" src="./assets/icon-empty-gallery.svg"/>
-                    <div class="empty-gallery__text">There are no artworks at the moment.</div>
-                </div>
-            </template>
+            <div class="empty-gallery" v-else>
+                <img class="empty-gallery__icon" src="./assets/icon-empty-gallery.svg"/>
+                <div class="empty-gallery__text">There are no artworks at the moment.</div>
+            </div>
         </div>
     `,
 
@@ -141,6 +138,7 @@ export default {
 
         onPageChanged(page) {
             this.$store.setCurrentPage(page)
+            this.$refs.artslist.scrollTop = 0
         }
     }
 }
