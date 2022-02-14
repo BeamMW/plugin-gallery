@@ -343,7 +343,6 @@ export const store = {
       }
 
       let mykeys = this.state.my_artist_keys;
-      alert(JSON.stringify(res.artists));
 
       for (let artist of res.artists) {
         if (mykeys.indexOf(artist.key) != -1) {
