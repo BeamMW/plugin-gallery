@@ -26,7 +26,7 @@ export default {
                     <span>Upload for artist:&nbsp;&nbsp;</span>
                     <select class="upload_artist" v-model="$state.selected_artist">
                         <option v-for="artist in artists" v-bind:value="{key: artist.key, label: artist.label}">
-                            {{artist.label}} - {{artist.key.substring(0, 4)}}
+                            {{artist.label}} - {{artist.key.substring(0, 4)}}..{{artist.key.slice(-4)}}
                         </option>
                     </select>
                     &nbsp;&nbsp;
