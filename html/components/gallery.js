@@ -34,7 +34,7 @@ export default {
             return artworks
         },
         can_vote () {
-            return this.$state.balance_reward > 0;
+            return false // this.$state.balance_reward > 0;
         },
         is_popup_visible() {
             return this.$state.is_popup_visible;
