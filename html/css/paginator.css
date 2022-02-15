@@ -27,8 +27,10 @@
 }
 
 .paginator-pages {
+  width: 150px;
   margin: 0 20px;
   display: flex;
+  justify-content: center;
 }
 
 .paginator .button-prev {
