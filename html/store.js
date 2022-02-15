@@ -339,6 +339,10 @@ export const store = {
         let mykeys = this.state.my_artist_keys
 
         for (let awork of res.items) {
+            if (!this.state.is_admin && awork.id >= 227 && awork.id <= 252) {
+                continue
+            }
+            
             let oawork = null
             for (let idx = oldstart; idx < this.state.artworks[tabs.ALL].length; ++idx) {
                 if (this.state.artworks[tabs.ALL][idx].id == awork.id) {
