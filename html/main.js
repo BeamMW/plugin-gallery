@@ -7,6 +7,7 @@ utils.initialize(
     {
         "appname": "BEAM Gallery",
         "min_api_version": "6.1",
+        "headless": true,
         "apiResultHandler": (...args) => store.onApiResult(...args)
     }, 
     (err) => {
@@ -44,7 +45,6 @@ utils.initialize(
             ].join(' ');
         }
         
-
         if (err) {
             return store.setError(err);
         }

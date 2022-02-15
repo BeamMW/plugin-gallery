@@ -32,8 +32,7 @@ export default {
                 <div class="user-opt">
                     ${this.renderUserName()}
                     <div class="user-opt__key" onclick=${this.onShowKey}>
-                        <img class="user-opt__key__icon" src="./assets/icon-key.svg"/>
-                        <span class="user-opt__key__text">Show my public key</span>
+                        ${this.renderKeyContent()}
                     </div>
                 </div>
             </div>
@@ -64,10 +63,17 @@ export default {
                 `;
             }
         },
+
+        renderKeyContent () {
+            return html`
+                <img class="user-opt__key__icon" src="./assets/icon-key.svg"/>
+                <span class="user-opt__key__text">Show my public key</span>
+            `
+        },
         
-        onShowKey () {
-            this.$store.setPopupType(popups.KEY);
-            this.$store.changePopupState(true);
+        async onShowKey () {
+            this.$store.setPopupType(popups.KEY)
+            this.$store.changePopupState(true)
         },
 
         onWithdraw () {

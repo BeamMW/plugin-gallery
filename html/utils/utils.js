@@ -1,10 +1,12 @@
 const MIN_AMOUNT = 0.00000001;
 const MAX_AMOUNT = 254000000;
 
-let BEAM     = null
-let CallID   = 0
-let Calls    = {}
-let APIResCB = undefined
+let BEAM         = null
+let CallID       = 0
+let Calls        = {}
+let APIResCB     = undefined
+let headlessNode = "eu-node01.masternet.beam.mw:8200"
+let InitParams   = undefined
 
 export default class Utils {
     static isMobile () {
@@ -26,30 +28,18 @@ export default class Utils {
         return !Utils.isDesktop() && !Utils.isMobile()
     }
 
-    static async createDesktopAPI(apirescback) {
-        return new Promise(async (resolve, reject) => {
-            await Utils.injectScript("qrc:///qtwebchannel/qwebchannel.js")
-            new QWebChannel(qt.webChannelTransport, (channel) => {
-                channel.objects.BEAM.api.callWalletApiResult.connect(apirescback)
-                resolve(channel.objects.BEAM)
-            })
-        })  
+    static isHeadless () {
+        return BEAM && BEAM.headless
     }
 
-    static async createWebAPI(apiver, apivermin, appname, apirescback) {
-        return new Promise((resolve, reject) => {
-            window.addEventListener('message', async (ev) => {
-                if (ev.data === 'apiInjected') {
-                    await window.BeamApi.callWalletApiResult(apirescback);
-                    resolve(window.BeamApi)
-                }
-            }, false);
-            window.postMessage({type: "create_beam_api", apiver, apivermin, appname}, window.origin);
-        })
+    static isChrome () {
+        const userAgent = navigator.userAgent;
+        const isChrome = userAgent.match(/chrome|chromium|crios/i)
+        return isChrome && userAgent.indexOf("Edg") == -1
     }
 
     static async createMobileAPI(apirescback) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             if (Utils.isAndroid()) {
                 document.addEventListener("onCallWalletApiResult", (res) => {
                     apirescback(res.detail)
@@ -58,11 +48,147 @@ export default class Utils {
             else {
                 window.BEAM.callWalletApiResult(apirescback);
             }
-            resolve(window.BEAM);
+            resolve({
+                api: window.BEAM
+            });
         })
     }
 
-    static async callApi(method, params, cback) {
+    static async createDesktopAPI(apirescback) {
+        await Utils.injectScript("qrc:///qtwebchannel/qwebchannel.js")
+        return new Promise(async (resolve) => {
+            new QWebChannel(qt.webChannelTransport, (channel) => {
+                channel.objects.BEAM.api.callWalletApiResult.connect(apirescback)
+                resolve({
+                    api: channel.objects.BEAM.api,
+                    styles: channel.objects.BEAM.style
+                })
+            })
+        })  
+    }
+
+    static async createWebAPI(apiver, apivermin, appname, apirescback) {
+        return new Promise((resolve) => {
+            window.addEventListener('message', async (ev) => {
+                if (ev.data === 'apiInjected') {
+                    await window.BeamApi.callWalletApiResult(apirescback);
+                    resolve({
+                        api: window.BeamApi
+                    })
+                }
+            }, false);
+            window.postMessage({type: "create_beam_api", apiver, apivermin, appname}, window.origin);
+        })
+    }
+
+    static async createHeadlessAPI(apiver, apivermin, appname, apirescback) {
+        await Utils.injectScript("wasm-client.js")
+        
+        let WasmModule = await BeamModule()
+        let WasmWalletClient = WasmModule.WasmWalletClient
+        let client = new WasmWalletClient(headlessNode)
+        client.startWallet()
+
+        client.subscribe((response) => {
+            let err = "Unexpected wasm wallet client response call: " + response
+            console.log(err)
+            throw err
+        })
+
+        client.setApproveContractInfoHandler((info) => {
+            let err = "Unexpected wasm wallet client transaction in headless wallet: " + info
+            console.log(err)
+            throw err
+        })
+        
+        return new Promise((resolve, reject) => {
+            let appid = WasmWalletClient.GenerateAppID(appname, window.location.href)
+            client.createAppAPI(apiver, apivermin, appid, appname, (err, api) => {
+                if (err) {
+                    reject(err)
+                }
+                
+                api.setHandler(apirescback)
+                resolve({
+                    headless: true,
+                    module: WasmModule,
+                    factory: WasmWalletClient,
+                    client,
+                    appid,
+                    api
+                })
+            })
+        })
+    }
+
+    static async stopHeadlessWallet() {
+        return new Promise((resolve, reject) => {
+            BEAM.client.stopWallet((data) => {
+                const running = BEAM.client.isRunning();
+                console.log(`is running: ${BEAM.client.isRunning()}`);
+                console.log('wallet stopped:', data);
+
+                if (running) {
+                    reject(false);
+                } else {
+                    resolve(true);
+                }
+            })
+        })
+    }
+
+    static async switchToWebAPI () {
+        if (!Utils.isHeadless()) {
+            throw "Wallet must be opened in a headless mode"
+        }
+
+        let apiver    = InitParams["api_version"] || "current"
+        let apivermin = InitParams["min_api_version"] || ""
+        let appname   = InitParams["appname"]
+        let apirescb  = (...args) => Utils.handleApiResult(...args)
+
+        const newAPI = await new Promise((resolve) => {
+            const listener = async (ev) => {
+                if (ev.data === 'apiInjected') {
+                    await window.BeamApi.callWalletApiResult(apirescb)
+                    Utils.hideLoading()
+                    resolve(window.BeamApi)
+                }
+
+                if (ev.data === 'rejected') {
+                }
+            }
+
+            window.addEventListener('message', listener, false)
+            Utils.showLoading({
+                headless: true,
+                connecting: true,
+                onCancel: (res) => {
+                    Utils.hideLoading()
+                    window.removeEventListener('message', listener)
+                    //TODO: add cancel handling in wallet
+                    window.postMessage({type: "cancel_beam_api", apiver, apivermin, appname}, window.origin);
+                    resolve(res)
+                },
+                onReconnect: () => {
+                    window.postMessage({type: "retry_beam_api", apiver, apivermin, appname}, window.origin);
+                }
+            })
+            window.postMessage({type: "create_beam_api", apiver, apivermin, appname}, window.origin)
+        })
+
+        if (newAPI) {
+            BEAM.api.delete();
+            await Utils.stopHeadlessWallet();
+            BEAM = {
+                api: newAPI
+            };
+        }
+
+        return newAPI
+    }
+
+    static callApi(method, params, cback) {
         let callid = ['call', CallID++].join('-')
         Calls[callid] = cback
 
@@ -74,17 +200,20 @@ export default class Utils {
         }
 
         //console.log(Utils.formatJSON(request))
+        if (Utils.isHeadless()) {
+            return BEAM.api.callWalletApi(JSON.stringify(request))
+        }
 
         if (Utils.isWeb()) {
-            BEAM.callWalletApi(callid, method, params);
+            return BEAM.api.callWalletApi(callid, method, params);
         } 
 
         if (Utils.isMobile()) {
-            BEAM.callWalletApi(JSON.stringify(request));
+            return BEAM.api.callWalletApi(JSON.stringify(request));
         }
         
         if (Utils.isDesktop()) {
-            BEAM.api.callWalletApi(JSON.stringify(request));
+            return BEAM.api.callWalletApi(JSON.stringify(request));
         }
     }
 
@@ -128,7 +257,7 @@ export default class Utils {
                 return cback(answer)
             }
 
-            if (!answer.result) {
+            if (typeof answer.result == 'undefined') {
                 return cback({
                     error: "no valid api call result", 
                     answer
@@ -161,7 +290,9 @@ export default class Utils {
     }
 
     static async initialize(params, initcback) {
+        InitParams = params
         APIResCB = params["apiResultHandler"]
+        let headless = params["headless"]
         
         try
         {
@@ -170,33 +301,65 @@ export default class Utils {
             } 
             
             if (Utils.isWeb()) {
-                Utils.showWebLoading()
                 let apiver    = params["api_version"] || "current"
                 let apivermin = params["min_api_version"] || ""
                 let appname   = params["appname"]
-                BEAM = await Utils.createWebAPI(apiver, apivermin, appname, (...args) => Utils.handleApiResult(...args))
-                Utils.hideWebLoading()
+
+                if (!Utils.isChrome()) {
+                    Utils.showChromeDownload();
+                    return false;
+                }
+                
+                if (headless) {
+                    Utils.showLoading({
+                        headless: true,
+                        connecting: false
+                    });
+                    BEAM = await Utils.createHeadlessAPI(
+                                apiver, apivermin, appname, 
+                                (...args) => Utils.handleApiResult(...args)
+                            )        
+                } else {
+                    Utils.showLoading({
+                        headless: false,
+                        connecting: true
+                    });
+                    BEAM = await Utils.createWebAPI(
+                                apiver, apivermin, appname, 
+                                (...args) => Utils.handleApiResult(...args)
+                            )
+                }
             }
 
             if (Utils.isMobile()) {
-                BEAM = await Utils.createMobileAPI((...args) => Utils.handleApiResult(...args))
+                try {
+                    BEAM = await Utils.createMobileAPI((...args) => Utils.handleApiResult(...args));
+                } catch (e) {
+                    Utils.showMobileStoresLinks();
+                    return false;
+                }
             }
 
             let styles = Utils.getStyles()
-            Utils.applyStyles(styles); 
+            Utils.applyStyles(styles)
+            Utils.hideLoading()
+            
+            if (!BEAM) {
+                return initcback("Failed to create BEAM API")
+            }
+
+            return initcback(null)
         }
         catch (err)
         {
             return initcback(err)
         }
-
-        return initcback(null)
     }
 
     static getStyles () {
-        if (BEAM && BEAM.style) {
+        if (BEAM && BEAM.styles) {
             // TODO: проборосить стили из мобайла и экстеншена
-            return BEAM.style
+            return BEAM.styles
         }
 
         return {
@@ -306,8 +469,10 @@ export default class Utils {
         return result;
     }
 
-    static showWebLoading() {
-        let styles = Utils.getStyles()
+    static showLoading(params) {
+        const {headless, connecting, onCancel, onReconnect} = params;
+
+        const styles = Utils.getStyles()
         Utils.applyStyles(styles);
         const topColor =  [styles.appsGradientOffset, "px,"].join('');
         const mainColor = [styles.appsGradientTop, "px,"].join('');
@@ -318,92 +483,214 @@ export default class Utils {
         bg.style.color = "#fff";
         bg.id = "dapp-loader";
         bg.style.position = "absolute";
+        if (headless && connecting) {
+            bg.style.top = '0';
+            bg.style.left = '0';
+            bg.style.position = 'fixed';
+            bg.addEventListener('click', (ev) => {
+                ev.stopPropagation()
+                if (ev.target.id === "dapp-loader") {
+                    onCancel()
+                }
+            });
+        } else {
+            bg.style.backgroundImage = [
+                "linear-gradient(to bottom,",
+                styles.background_main_top, topColor,
+                styles.background_main, mainColor,
+                styles.background_main
+            ].join(' ');
+        }
+        let loadContainer = document.createElement("div");
+        loadContainer.id = "dapp-loading";
+
+        loadContainer.style.textAlign = 'center';
+        loadContainer.style.margin = '50px auto 0 auto';
+        loadContainer.style.width = '585px';
+        loadContainer.style.padding = '5%';
+        loadContainer.style.borderRadius = '10px';
+
+        let titleElem = null;
+        let subtitle = null;
+        
+        if (connecting) {
+            titleElem = document.createElement("h3");
+            titleElem.innerText = "Connecting to BEAM Web Wallet."; 
+            subtitle = document.createElement("p");
+            subtitle.innerText = ["To use ", InitParams["appname"], " you should have BEAM Web Wallet installed and allow connection."].join("")
+
+            if (headless) {
+                loadContainer.style.backgroundColor = 'rgba(3, 91, 133, 0.95)';
+                const container = document.getElementById('container');
+                if (container) {
+                    container.style.filter = 'blur(3px)'
+                }
+            } else {
+                loadContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
+            }
+        } else {
+            loadContainer.style.backgroundColor = 'transparent';
+
+            titleElem = document.createElement("div");
+            titleElem.style.fontSize = '25px';
+            titleElem.style.fontWeight = '400';
+            titleElem.innerText = [InitParams["appname"], "is loading"].join(' ');
+            subtitle = document.createElement("p");
+            subtitle.innerText = "Please wait...";
+        }
+        
+        loadContainer.appendChild(titleElem);
+        loadContainer.appendChild(subtitle);
+
+        if (connecting) {
+            let reconnectButton = document.createElement("button");
+            reconnectButton.innerText = "Try to connect again";
+            reconnectButton.style.height = "44px";
+            reconnectButton.style.padding = "13px 30px";
+            reconnectButton.style.borderRadius = "50px";
+            reconnectButton.style.border = "none";
+            reconnectButton.style.color = "#fff";
+            reconnectButton.style.cursor = "pointer";
+            reconnectButton.style.fontWeight = "bold";
+            reconnectButton.style.fontSize = "14px";
+            reconnectButton.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
+
+            reconnectButton.addEventListener("mouseover", () => {
+                reconnectButton.style.boxShadow = "0 0 8px white";
+            }, false);
+
+            reconnectButton.addEventListener("mouseout", () => {
+                reconnectButton.style.boxShadow = "none";
+            }, false);
+
+            reconnectButton.addEventListener('click', onReconnect);
+
+            let installButton = document.createElement("button");
+            installButton.innerText = "Install BEAM Web Wallet";
+            installButton.style.height = "44px";
+            installButton.style.padding = "13px 30px";
+            installButton.style.borderRadius = "50px";
+            installButton.style.border = "none";
+            installButton.style.color = "#042548";
+            installButton.style.cursor = "pointer";
+            installButton.style.fontWeight = "bold";
+            installButton.style.fontSize = "14px";
+            installButton.style.backgroundColor = "#00f6d2";
+            installButton.addEventListener('click', () => {
+                window.open('https://chrome.google.com/webstore/detail/beam-web-wallet/ilhaljfiglknggcoegeknjghdgampffk', 
+                    '_blank');
+            });
+
+            installButton.addEventListener("mouseover", () => {
+                installButton.style.boxShadow = "0 0 8px white";
+            }, false);
+            installButton.addEventListener("mouseout", () => {
+                installButton.style.boxShadow = "none";
+            }, false);
+            installButton.style.marginLeft = '30px';
+            
+            let controlsArea = document.createElement("div");
+            controlsArea.style.marginTop = "50px";
+            
+            loadContainer.appendChild(controlsArea);
+            controlsArea.appendChild(reconnectButton);
+            controlsArea.appendChild(installButton);
+        }
+
+        bg.appendChild(loadContainer);
+
+        document.body.appendChild(bg);
+    }
+
+    static showChromeDownload() {
+        const styles = Utils.getStyles()
+        Utils.applyStyles(styles);
+        const topColor =  [styles.appsGradientOffset, "px,"].join('');
+        const mainColor = [styles.appsGradientTop, "px,"].join('');
+
+        let bg = document.createElement("div");
+        bg.style.width = "100%";
+        bg.style.height = "100%";
+        bg.style.color = "#fff";
+        bg.id = "chrome-download";
+        bg.style.position = "absolute";
+        bg.style.textAlign = "center";
         bg.style.backgroundImage = [
             "linear-gradient(to bottom,",
             styles.background_main_top, topColor,
             styles.background_main, mainColor,
             styles.background_main
         ].join(' ');
-        let loadContainer = document.createElement("div");
-        loadContainer.className = "dapp-loading";
 
-        loadContainer.style.textAlign = 'center';
-        loadContainer.style.margin = '50px auto 0 auto';
-        loadContainer.style.width = '585px';
-        loadContainer.style.padding = '5%';
-        loadContainer.style.backgroundColor = 'rgba(255, 255, 255, 0.05)';
-        loadContainer.style.borderRadius = '10px';
+        let notSupp = document.createElement("p");
+        notSupp.innerText = "Your browser is not supported";
+        notSupp.style.color = "#fff";
+        notSupp.style.fontWeight = "bold";
+        notSupp.style.fontSize = "18px";
+        notSupp.style.marginTop = "200px";
+        let download = document.createElement("p");
+        download.innerText = "Download chrome browser";
+        download.style.cursor = "pointer";
+        download.style.color = "#00f6d2";
 
-        let titleElem = document.createElement("h3");
-        titleElem.innerText = "Connecting to BEAM Web Wallet."; 
-        let subtitle = document.createElement("p");
-        subtitle.innerText = "To use BEAM Gallery you should have BEAM Web Wallet installed and allow connection.";
-
-        let reconnectButton = document.createElement("button");
-        reconnectButton.innerText = "Try to connect again";
-        reconnectButton.style.height = "44px";
-        reconnectButton.style.padding = "13px 30px";
-        reconnectButton.style.borderRadius = "50px";
-        reconnectButton.style.border = "none";
-        reconnectButton.style.color = "#fff";
-        reconnectButton.style.cursor = "pointer";
-        reconnectButton.style.fontWeight = "bold";
-        reconnectButton.style.fontSize = "14px";
-        reconnectButton.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
-
-        reconnectButton.addEventListener("mouseover", () => {
-            reconnectButton.style.boxShadow = "0 0 8px white";
-        }, false);
-        reconnectButton.addEventListener("mouseout", () => {
-            reconnectButton.style.boxShadow = "none";
-        }, false);
-
-
-        reconnectButton.addEventListener('click', () => {
-            Utils.reload();
-        });
-        let installButton = document.createElement("button");
-        installButton.innerText = "Install BEAM Web Wallet";
-        installButton.style.height = "44px";
-        installButton.style.padding = "13px 30px";
-        installButton.style.borderRadius = "50px";
-        installButton.style.border = "none";
-        installButton.style.color = "#042548";
-        installButton.style.cursor = "pointer";
-        installButton.style.fontWeight = "bold";
-        installButton.style.fontSize = "14px";
-        installButton.style.backgroundColor = "#00f6d2";
-        installButton.addEventListener('click', () => {
-            window.open('https://chrome.google.com/webstore/detail/beam-web-wallet/ilhaljfiglknggcoegeknjghdgampffk', 
+        download.addEventListener('click', () => {
+            window.open('https://www.google.com/chrome/', 
                 '_blank');
         });
 
-        installButton.addEventListener("mouseover", () => {
-            installButton.style.boxShadow = "0 0 8px white";
-        }, false);
-        installButton.addEventListener("mouseout", () => {
-            installButton.style.boxShadow = "none";
-        }, false);
-        installButton.style.marginLeft = '30px';
-        
-        let controlsArea = document.createElement("div");
-        controlsArea.style.marginTop = "50px";
-        
-        loadContainer.appendChild(titleElem);
-        loadContainer.appendChild(subtitle);
-        loadContainer.appendChild(controlsArea);
+        bg.appendChild(notSupp);
+        bg.appendChild(download);
 
-        controlsArea.appendChild(reconnectButton);
-        controlsArea.appendChild(installButton);
-
-        bg.appendChild(loadContainer);
-
-        document.body.appendChild(bg)
+        document.body.appendChild(bg);
     }
 
-    static hideWebLoading() {
-        const elem = document.getElementById("dapp-loader");
-        elem.parentNode.removeChild(elem);
+    static showMobileStoresLinks() {
+        const styles = Utils.getStyles()
+        Utils.applyStyles(styles);
+        const topColor =  [styles.appsGradientOffset, "px,"].join('');
+        const mainColor = [styles.appsGradientTop, "px,"].join('');
+
+        let bg = document.createElement("div");
+        bg.style.width = "100%";
+        bg.style.height = "100%";
+        bg.style.color = "#fff";
+        bg.id = "chrome-download";
+        bg.style.position = "absolute";
+        bg.style.textAlign = "center";
+        bg.style.backgroundImage = [
+            "linear-gradient(to bottom,",
+            styles.background_main_top, topColor,
+            styles.background_main, mainColor,
+            styles.background_main
+        ].join(' ');
+
+        let downloadLink = document.createElement("p");
+        downloadLink.innerText = "Download beam wallet";
+        downloadLink.style.marginTop = "100px";
+        downloadLink.style.fontSize = "20px";
+        downloadLink.style.color = "#00f6d2";
+        downloadLink.addEventListener('click', () => {
+            Utils.isAndroid() 
+            ? window.open('https://play.google.com/store/apps/details?id=com.mw.beam.beamwallet.mainnet', 
+                '_blank')
+            : window.open('https://apps.apple.com/us/app/beam-privacy-wallet/id1459842353?ls=1', 
+            '_blank');
+        });
+
+        bg.appendChild(downloadLink);
+        document.body.appendChild(bg);
+    }
+
+    static hideLoading() {
+        const loader = document.getElementById("dapp-loader")
+        if (loader) {
+            loader.parentNode.removeChild(loader)
+        }
+
+        const container = document.getElementById('container')
+        if (container) {
+            container.style.filter = 'none'
+        }
     }
 
     static formateValue(value) {
