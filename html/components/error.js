@@ -20,14 +20,13 @@ export default {
 
     mounted () {
         this.errleft = 5
-        /*this.timeout = setInterval(() => {
+        this.timeout = setInterval(() => {
             this.errleft -= 1
             if (this.errleft == 0) {
                 clearInterval(this.timeout)
                 this.$store.clearError()
             }
         }, 1000)
-        */
     },
 
     computed: {
