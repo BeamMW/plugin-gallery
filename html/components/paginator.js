@@ -18,32 +18,31 @@ export default {
     },
     visible_pages() {
       const firstPage = this.pages[0]
-      const lastPage = this.pages.length
-      // @TODO: move to consts.js
+      const lastPage = this.pages[this.pages.length - 1]
       const RANGE = 3
       const SPACE = '...'
 
-      if (this.pages.length <= 5) {
+      if (this.pages.length <= RANGE + 2) {
         return this.pages
       }
 
-      if (this.current_page <= RANGE + 1) {
+      if (this.current_page <= RANGE) {
         const restPages = this.pages.slice(firstPage, RANGE + 1)
-
-        return this.current_page === RANGE + 1
-          ? [firstPage, ...restPages, this.current_page + 1, SPACE, lastPage]
-          : [firstPage, ...restPages, SPACE, lastPage]
+        return [firstPage, ...restPages, SPACE, lastPage]
       }
-      
-      if (this.current_page >= lastPage - RANGE) {
+
+      if (this.current_page > lastPage - RANGE) {
         const restPages = this.pages.slice(lastPage - RANGE - 1, lastPage - 1)
-
-        return this.current_page === lastPage - RANGE
-          ? [firstPage, SPACE, this.current_page - 1, ...restPages, lastPage]
-          : [firstPage, SPACE, ...restPages, lastPage]
+        return [firstPage, SPACE, ...restPages, lastPage]
       }
 
-      return [firstPage, SPACE, this.current_page - 1, this.current_page, this.current_page + 1, SPACE, lastPage]
+      if (this.current_page > RANGE && this.current_page <= lastPage - RANGE) {
+        const restPages = Array.from({ length: RANGE }, (_, idx) => {
+          return idx + this.current_page - Math.floor(RANGE / 2)
+        })
+
+        return [firstPage, SPACE, ...restPages, SPACE, lastPage]
+      }
     },
     is_previous_disabled() {
       return this.current_page === 1
