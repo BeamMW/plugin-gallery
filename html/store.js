@@ -16,12 +16,14 @@ const defaultState = () => {
     is_admin: false,
     artworks: {
       [tabs.ALL]: [],
+      [tabs.MINE]: [],
+      [tabs.SALE]: [],
+      [tabs.LIKED]: [],
+      [tabs.SOLD]: [],
     },
     current_page: 1,
     total_pages: 1,
-    visible_arts: [],
-    //
-    arts: [],
+    visible_artworks: [],
     artists: {},
     artists_count: 0,
     balance_beam: 0,
@@ -330,7 +332,7 @@ export const store = {
     let arts = []
 
     for (let artwork of res.items) {
-      let oldArtwork = this.state.arts.find(item => {
+      let oldArtwork = this.state.artworks[tabs.ALL].find(item => {
         return item.id == artwork.id
       })
 
@@ -352,33 +354,32 @@ export const store = {
       }
 
       artwork['author'] = (this.state.artists[artwork.pk_author] || {}).label
-
-      let mykeys = this.state.my_artist_keys
-      // delete
-      const artState = {
-        isAll: true,
-        isMine: artwork.owned,
-        isSale: artwork.owned && artwork.price,
-        isLiked: artwork.my_impression,
-        isSold: mykeys.indexOf(artwork.pk_author) != -1 && !artwork.owned,
-      }
-
-      artwork['art_state'] = artState
       arts.push(artwork)
     }
 
     this.state.loading = false
-    this.state.arts = arts
 
-    this.state.total_pages = Math.ceil(this.state.arts.length / common.ARTWORKS_PER_PAGE) || 1
+    this.state.artworks[tabs.ALL] = arts
+    this.state.artworks[tabs.MINE] = arts.filter(artwork => artwork.owned)
+    this.state.artworks[tabs.SALE] = arts.filter(artwork => artwork.owned && artwork.price)
+    this.state.artworks[tabs.SOLD] = arts.filter(
+      artwork => this.state.my_artist_keys.indexOf(artwork.pk_author) != -1 && !artwork.owned
+    )
+    this.state.artworks[tabs.LIKED] = arts.filter(artwork => artwork.my_impression)
+
+    this.state.total_pages =
+      Math.ceil(this.state.artworks[this.state.active_tab].length / common.ARTWORKS_PER_PAGE) || 1
     this.setCurrentPage(this.state.current_page)
   },
 
   setCurrentPage(page) {
-    const firstIdx = page * common.ARTWORKS_PER_PAGE - common.ARTWORKS_PER_PAGE
-    const lastIdx = page * common.ARTWORKS_PER_PAGE - 1 
+    this.state.total_pages =
+      Math.ceil(this.state.artworks[this.state.active_tab].length / common.ARTWORKS_PER_PAGE) || 1
 
-    const visibleArts = this.state.arts.slice(firstIdx, lastIdx + 1)
+    const firstIdx = page * common.ARTWORKS_PER_PAGE - common.ARTWORKS_PER_PAGE
+    const lastIdx = page * common.ARTWORKS_PER_PAGE - 1
+
+    const visibleArts = this.state.artworks[this.state.active_tab].slice(firstIdx, lastIdx + 1)
 
     visibleArts.forEach((art, idx) => {
       if (!art.bytes) {
@@ -386,7 +387,7 @@ export const store = {
       }
     })
 
-    this.state.visible_arts = visibleArts
+    this.state.visible_artworks = visibleArts
     this.state.current_page = page
   },
 
@@ -498,7 +499,8 @@ export const store = {
 
   setActiveTab(id) {
     this.state.active_tab = id
-    //this.sortArtWorks();
+    this.state.current_page = 1
+    this.setCurrentPage(this.state.current_page)
   },
 
   loadArtwork(idx, id) {
@@ -540,7 +542,8 @@ export const store = {
 
     // save parsed data
     // list may have been changed, so we check if artwork with this id is still present
-    let artwork = this.state.arts[idx]
+    let artwork = this.state.artworks[this.state.active_tab][idx]
+    // let artwork = this.state.arts[idx]
     if (artwork && artwork.id) {
       artwork.title = name
       artwork.bytes = bytes

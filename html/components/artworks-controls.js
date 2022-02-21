@@ -7,20 +7,20 @@ export default {
         active_tab () {
             return this.$state.active_tab;
         },
-        mine_tab_state () {
-            return this.$state.visible_arts.find((art) => art.art_state.isMine);
-        },
-        liked_tab_state () {
-            return this.$state.visible_arts.find((art) => art.art_state.isLiked);
-        },
-        sold_tab_state () {
-            return this.$state.visible_arts.find((art) => art.art_state.isSold);
-        },
-        sale_tab_state () {
-            return this.$state.visible_arts.find((art) => art.art_state.isSale);
-        },
+        // mine_tab_state () {
+        //     return this.$state.visible_arts.find((art) => art.art_state.isMine);
+        // },
+        // liked_tab_state () {
+        //     return this.$state.visible_arts.find((art) => art.art_state.isLiked);
+        // },
+        // sold_tab_state () {
+        //     return this.$state.visible_arts.find((art) => art.art_state.isSold);
+        // },
+        // sale_tab_state () {
+        //     return this.$state.visible_arts.find((art) => art.art_state.isSale);
+        // },
         get_pages_count() {
-            return Math.ceil(this.$state.arts.length / 2);
+            return Math.ceil(this.$state.artworks[this.$state.active_tab].length / 2);
         },
         get_current_page() {
             return this.$state.current_page;
@@ -47,10 +47,10 @@ export default {
                 <div class="artworks-controls">
                     <div class="artworks-controls__tabs">
                         ${this.renderTab(tabs.ALL, 'ALL')}
-                        ${this.mine_tab_state ? this.renderTab(tabs.MINE, 'MINE') : null}
-                        ${this.sale_tab_state ? this.renderTab(tabs.SALE, 'SALE') : null}
-                        ${this.sold_tab_state ? this.renderTab(tabs.SOLD, 'SOLD') : null}
-                        ${this.liked_tab_state ? this.renderTab(tabs.LIKED, 'LIKED') : null}
+                        ${this.renderTab(tabs.MINE, 'MINE')}
+                        ${this.renderTab(tabs.SALE, 'SALE')}
+                        ${this.renderTab(tabs.LIKED, 'LIKED')}
+                        ${this.renderTab(tabs.SOLD, 'SOLD')}
                     </div>
 
                     <div class="artworks-controls__pages">
@@ -75,7 +75,7 @@ export default {
     methods: {
         onTabClicked(id) {
             if (this.active_tab !== id) {
-                this.$store.setActiveTab(id);
+              this.$store.setActiveTab(id);
             }
         },
 

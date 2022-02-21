@@ -22,24 +22,6 @@ export default {
     active_tab() {
       return this.$state.active_tab
     },
-    // artworks() {
-    //   let tab = this.$state.active_tab
-    //   let arts = []
-
-    //   for (let art of this.$state.arts) {
-    //     if (
-    //       (art.art_state.isAll && tab === tabs.ALL) ||
-    //       (art.art_state.isMine && tab === tabs.MINE) ||
-    //       (art.art_state.isSale && tab === tabs.SALE) ||
-    //       (art.art_state.isSold && tab === tabs.SOLD) ||
-    //       (art.art_state.isLiked && tab === tabs.LIKED)
-    //     ) {
-    //       arts.push(art)
-    //     }
-    //   }
-
-    //   return arts
-    // },
     can_vote() {
       return this.$state.balance_reward > 0
     },
@@ -53,7 +35,7 @@ export default {
       return this.$state.total_pages
     },
     current_artworks() {
-      return this.$state.visible_arts
+      return this.$state.visible_artworks
     },
     current_page() {
       return this.$state.current_page
