@@ -1,6 +1,6 @@
 export const common = { 
     GROTHS_IN_BEAM: 100000000,
-    ARTWORKS_PER_PAGE: 1 // must be 50 according to the task
+    ARTWORKS_PER_PAGE: 3 // must be 50 according to the task
 };
 
 export const tabs = {

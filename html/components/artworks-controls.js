@@ -8,16 +8,16 @@ export default {
             return this.$state.active_tab;
         },
         mine_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isMine);
+            return this.$state.visible_arts.find((art) => art.art_state.isMine);
         },
         liked_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isLiked);
+            return this.$state.visible_arts.find((art) => art.art_state.isLiked);
         },
         sold_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isSold);
+            return this.$state.visible_arts.find((art) => art.art_state.isSold);
         },
         sale_tab_state () {
-            return this.$state.arts.find((art) => art.art_state.isSale);
+            return this.$state.visible_arts.find((art) => art.art_state.isSale);
         },
         get_pages_count() {
             return Math.ceil(this.$state.arts.length / 2);
