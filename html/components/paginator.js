@@ -54,11 +54,11 @@ export default {
 
   methods: {
     goToNextPage() {
-      let page = this.current_page < this.total_pages ? this.current_page + 1 : this.current_page
+      const page = this.current_page < this.total_pages ? this.current_page + 1 : this.current_page
       this.onChangePage(page)
     },
     goToPreviousPage() {
-      let page = this.current_page > 1 ? this.current_page - 1 : this.current_page
+      const page = this.current_page > 1 ? this.current_page - 1 : this.current_page
       this.onChangePage(page)
     },
     onChangePage(page) {
