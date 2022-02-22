@@ -357,18 +357,40 @@ export const store = {
       arts.push(artwork)
     }
 
+    const ALL = []
+    const MINE = []
+    const SALE = []
+    const SOLD = []
+    const LIKED = []
+
+    arts.forEach(artwork => {
+      ALL.push(artwork)
+
+      if (artwork.owned) {
+        MINE.push(artwork)
+      }
+
+      if (artwork.owned && artwork.price) {
+        SALE.push(artwork)
+      }
+
+      if (this.state.my_artist_keys.indexOf(artwork.pk_author) != -1 && !artwork.owned) {
+        SOLD.push(artwork)
+      }
+
+      if (artwork.my_impression) {
+        LIKED.push(artwork)
+      }
+    })
+
+    this.state.artworks[tabs.ALL] = ALL
+    this.state.artworks[tabs.MINE] = MINE
+    this.state.artworks[tabs.SALE] = SALE
+    this.state.artworks[tabs.SOLD] = SOLD
+    this.state.artworks[tabs.LIKED] = LIKED
+
     this.state.loading = false
-
-    this.state.artworks[tabs.ALL] = arts
-    this.state.artworks[tabs.MINE] = arts.filter(artwork => artwork.owned)
-    this.state.artworks[tabs.SALE] = arts.filter(artwork => artwork.owned && artwork.price)
-    this.state.artworks[tabs.SOLD] = arts.filter(
-      artwork => this.state.my_artist_keys.indexOf(artwork.pk_author) != -1 && !artwork.owned
-    )
-    this.state.artworks[tabs.LIKED] = arts.filter(artwork => artwork.my_impression)
-
-    this.state.total_pages =
-      Math.ceil(this.state.artworks[this.state.active_tab].length / common.ARTWORKS_PER_PAGE) || 1
+    
     this.setCurrentPage(this.state.current_page)
   },
 
