@@ -373,9 +373,6 @@ export const store = {
   },
 
   setCurrentPage(page) {
-    this.state.total_pages =
-      Math.ceil(this.state.artworks[this.state.active_tab].length / common.ARTWORKS_PER_PAGE) || 1
-
     const firstIdx = page * common.ARTWORKS_PER_PAGE - common.ARTWORKS_PER_PAGE
     const lastIdx = page * common.ARTWORKS_PER_PAGE - 1
 
@@ -387,6 +384,8 @@ export const store = {
       }
     })
 
+    this.state.total_pages =
+      Math.ceil(this.state.artworks[this.state.active_tab].length / common.ARTWORKS_PER_PAGE) || 1
     this.state.visible_artworks = visibleArts
     this.state.current_page = page
   },
