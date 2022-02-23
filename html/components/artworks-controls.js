@@ -7,28 +7,6 @@ export default {
     active_tab() {
       return this.$state.active_tab
     },
-
-    ////////////////
-    //// DELETE ////
-    ////////////////
-    // mine_tab_state () {
-    //     return this.$state.visible_arts.find((art) => art.art_state.isMine);
-    // },
-    // liked_tab_state () {
-    //     return this.$state.visible_arts.find((art) => art.art_state.isLiked);
-    // },
-    // sold_tab_state () {
-    //     return this.$state.visible_arts.find((art) => art.art_state.isSold);
-    // },
-    // sale_tab_state () {
-    //     return this.$state.visible_arts.find((art) => art.art_state.isSale);
-    // },
-    // get_pages_count() {
-    //   return Math.ceil(this.$state.artworks[this.$state.active_tab].length / 2)
-    // },
-    // get_current_page() {
-    //   return this.$state.current_page
-    // },
   },
 
   components: {
